@@ -279,13 +279,6 @@ function draw(now) {
   );
 
   if (current) {
-    // Ghost
-    const gy = ghostY();
-    current.shape.forEach((row, r) =>
-      row.forEach((v, c) => {
-        if (v) drawCell(ctx, current.x + c, gy + r, current.color, 0.18);
-      })
-    );
     // Current piece
     current.shape.forEach((row, r) =>
       row.forEach((v, c) => {
