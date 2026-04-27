@@ -187,9 +187,12 @@
       <li><span>右移</span><span class="key">→ D</span></li>
       <li><span>前移</span><span class="key">↑ W</span></li>
       <li><span>後移</span><span class="key">↓ S</span></li>
-      <li><span>旋轉X</span><span class="key">Q</span></li>
-      <li><span>旋轉Z</span><span class="key">E</span></li>
-      <li><span>旋轉Y</span><span class="key">R</span></li>
+      <li><span>順時鐘旋轉</span><span class="key">E</span></li>
+      <li><span>逆時鐘旋轉</span><span class="key">Q</span></li>
+      <li><span>仰俯旋轉</span><span class="key">R</span></li>
+      <li><span>側滾旋轉</span><span class="key">T</span></li>
+      <li><span>水平翻轉</span><span class="key">H</span></li>
+      <li><span>垂直翻轉</span><span class="key">V</span></li>
       <li><span>快速落下</span><span class="key">Space</span></li>
       <li><span>直接落底</span><span class="key">Enter</span></li>
       <li><span>暫停</span><span class="key">P</span></li>
@@ -312,21 +315,37 @@ const blockGeo = new THREE.BoxGeometry(CELL * 0.92, CELL * 0.92, CELL * 0.92);
 function makeMat(color, ghost = false) {
   return new THREE.MeshPhongMaterial({
     color,
-    transparent: ghost,
-    opacity: ghost ? 0.22 : 1,
-    shininess: 80,
-    specular: 0x888888,
-    emissive: ghost ? color : 0x000000,
-    emissiveIntensity: ghost ? 0.15 : 0,
+    transparent: true,
+    opacity: ghost ? 0.12 : 0.45,
+    shininess: 160,
+    specular: 0xffffff,
+    reflectivity: 1,
+    side: THREE.DoubleSide,
+    emissive: color,
+    emissiveIntensity: ghost ? 0.08 : 0.18,
+    depthWrite: !ghost,
   });
 }
 
+const edgeGeo = new THREE.EdgesGeometry(blockGeo);
+
 function cellMesh(x, y, z, color, ghost = false) {
-  const mesh = new THREE.Mesh(blockGeo, makeMat(color, ghost));
-  mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
-  mesh.castShadow = !ghost;
-  scene.add(mesh);
-  return mesh;
+  const group = new THREE.Group();
+  group.position.set(x + 0.5, y + 0.5, z + 0.5);
+
+  const face = new THREE.Mesh(blockGeo, makeMat(color, ghost));
+  face.castShadow = !ghost;
+  group.add(face);
+
+  const edgeMat = new THREE.LineBasicMaterial({
+    color: ghost ? color : 0xffffff,
+    transparent: true,
+    opacity: ghost ? 0.2 : 0.7,
+  });
+  group.add(new THREE.LineSegments(edgeGeo, edgeMat));
+
+  scene.add(group);
+  return group;
 }
 
 // ─── Board Logic ─────────────────────────────────────────────────────────────
@@ -427,16 +446,37 @@ function rotateCells(cells, axis) {
   });
 }
 
-function tryRotate(axis) {
+function tryRotate(axis, dir = 1) {
   if (!current) return;
-  const rotated = rotateCells(current.cells, axis);
+  let cells = current.cells;
+  // dir=-1 means apply rotation 3 times (equivalent to reverse)
+  const times = dir === 1 ? 1 : 3;
+  for (let i = 0; i < times; i++) cells = rotateCells(cells, axis);
   const offsets = [[0,0,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1],[0,1,0],[0,-1,0]];
   for (const [ox, oy, oz] of offsets) {
-    const shifted = rotated.map(([x, y, z]) => [x + ox, y + oy, z + oz]);
-    if (validPosition(shifted)) {
-      current.cells = shifted;
-      return;
-    }
+    const shifted = cells.map(([x, y, z]) => [x + ox, y + oy, z + oz]);
+    if (validPosition(shifted)) { current.cells = shifted; return; }
+  }
+}
+
+function flipCells(cells, axis) {
+  const cx = cells.reduce((s, c) => s + c[0], 0) / cells.length;
+  const cy = cells.reduce((s, c) => s + c[1], 0) / cells.length;
+  const cz = cells.reduce((s, c) => s + c[2], 0) / cells.length;
+  return cells.map(([x, y, z]) => {
+    if (axis === 'h') return [Math.round(2 * cx - x), y, z];   // horizontal: mirror X
+    if (axis === 'v') return [x, y, Math.round(2 * cz - z)];   // vertical: mirror Z
+    return [x, y, z];
+  });
+}
+
+function tryFlip(axis) {
+  if (!current) return;
+  const flipped = flipCells(current.cells, axis);
+  const offsets = [[0,0,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
+  for (const [ox, oy, oz] of offsets) {
+    const shifted = flipped.map(([x, y, z]) => [x + ox, y + oy, z + oz]);
+    if (validPosition(shifted)) { current.cells = shifted; return; }
   }
 }
 
@@ -661,9 +701,12 @@ window.addEventListener('keydown', e => {
     case 'ArrowDown':  case 'KeyS': handleMove(() => tryMove(0, 0, 1)); break;
     case 'Space': softDrop(); rebuildCurrentMeshes(); e.preventDefault(); break;
     case 'Enter': hardDrop(); e.preventDefault(); break;
-    case 'KeyQ': tryRotate('x'); rebuildCurrentMeshes(); break;
-    case 'KeyE': tryRotate('z'); rebuildCurrentMeshes(); break;
-    case 'KeyR': tryRotate('y'); rebuildCurrentMeshes(); break;
+    case 'KeyQ': tryRotate('y', -1); rebuildCurrentMeshes(); break; // 逆時鐘
+    case 'KeyE': tryRotate('y',  1); rebuildCurrentMeshes(); break; // 順時鐘
+    case 'KeyR': tryRotate('x',  1); rebuildCurrentMeshes(); break; // 仰俯
+    case 'KeyT': tryRotate('z',  1); rebuildCurrentMeshes(); break; // 側滾
+    case 'KeyH': tryFlip('h'); rebuildCurrentMeshes(); break;        // 水平翻轉
+    case 'KeyV': tryFlip('v'); rebuildCurrentMeshes(); break;        // 垂直翻轉
   }
 
   function handleMove(fn) {
