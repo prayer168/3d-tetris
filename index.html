@@ -3,764 +3,403 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>立體俄羅斯方塊 3D Tetris</title>
+<title>俄羅斯方塊</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #0a0a1a;
-    color: #fff;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #1a1a2e;
     display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100vh;
-    overflow: hidden;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #fff;
+    gap: 24px;
   }
-  #game-container {
-    flex: 1;
-    position: relative;
-  }
-  #renderer-canvas {
+  #board {
+    border: 2px solid #334;
+    background: #0d0d1a;
     display: block;
+    box-shadow: 0 0 40px rgba(80,80,255,0.3);
   }
-  #ui-panel {
-    width: 220px;
-    background: rgba(10,10,30,0.95);
-    border-left: 1px solid #334;
+  #side-panel {
     display: flex;
     flex-direction: column;
-    padding: 20px 16px;
-    gap: 16px;
-    overflow-y: auto;
+    gap: 20px;
+    min-width: 140px;
   }
-  h1 {
-    font-size: 1.1rem;
-    color: #88aaff;
-    text-align: center;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .panel-section {
+  .panel-box {
     background: rgba(255,255,255,0.05);
-    border-radius: 8px;
-    padding: 12px;
+    border: 1px solid #334;
+    border-radius: 10px;
+    padding: 14px 16px;
   }
-  .panel-section h3 {
-    font-size: 0.7rem;
+  .panel-box h3 {
+    font-size: 0.65rem;
     color: #667;
-    text-transform: uppercase;
     letter-spacing: 2px;
-    margin-bottom: 8px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
   }
-  .stat-value {
-    font-size: 1.6rem;
+  .panel-box .val {
+    font-size: 1.7rem;
     font-weight: bold;
     color: #88aaff;
   }
-  .stat-label {
-    font-size: 0.75rem;
-    color: #556;
-    margin-top: 2px;
-  }
   #next-canvas {
     display: block;
-    margin: 0 auto;
-    background: rgba(0,0,0,0.3);
-    border-radius: 6px;
+    margin: 6px auto 0;
   }
-  .controls-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .controls-list li {
-    display: flex;
-    justify-content: space-between;
+  .keys {
     font-size: 0.72rem;
-    color: #aab;
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: #99a;
+    line-height: 1.9;
   }
-  .key {
+  .keys b {
     background: rgba(255,255,255,0.1);
     border-radius: 3px;
     padding: 1px 5px;
     font-family: monospace;
-    font-size: 0.68rem;
     color: #ccd;
+    font-weight: normal;
   }
   #btn-start {
     background: linear-gradient(135deg, #4466ff, #6644ff);
     border: none;
     border-radius: 8px;
     color: #fff;
-    padding: 10px;
+    padding: 11px;
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: bold;
     letter-spacing: 1px;
-    transition: opacity 0.2s;
     width: 100%;
+    transition: opacity 0.2s;
   }
   #btn-start:hover { opacity: 0.85; }
   #overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,10,0.75);
-    backdrop-filter: blur(4px);
+    background: rgba(0,0,10,0.78);
+    backdrop-filter: blur(5px);
     z-index: 10;
+    gap: 12px;
   }
-  #overlay h2 {
-    font-size: 2.5rem;
-    color: #88aaff;
-    margin-bottom: 12px;
-    text-shadow: 0 0 30px #4466ff;
-  }
-  #overlay p {
-    color: #aab;
-    margin-bottom: 24px;
-    font-size: 0.95rem;
-  }
+  #overlay h2 { font-size: 2.4rem; color: #88aaff; text-shadow: 0 0 30px #4466ff; }
+  #overlay p  { color: #aab; font-size: 0.95rem; }
   #overlay button {
     background: linear-gradient(135deg, #4466ff, #6644ff);
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    padding: 14px 40px;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: bold;
-    letter-spacing: 2px;
+    border: none; border-radius: 10px; color: #fff;
+    padding: 13px 44px; cursor: pointer;
+    font-size: 1.1rem; font-weight: bold; letter-spacing: 2px;
     box-shadow: 0 0 30px rgba(100,100,255,0.4);
-    transition: transform 0.1s;
+    transition: transform 0.1s; margin-top: 8px;
   }
   #overlay button:hover { transform: scale(1.05); }
-  #level-display { color: #ffaa44; }
-  #lines-display { color: #44ffaa; }
 </style>
 </head>
 <body>
-<div id="game-container">
-  <canvas id="renderer-canvas"></canvas>
-  <div id="overlay">
-    <h2>3D 俄羅斯方塊</h2>
-    <p>使用鍵盤控制方塊，清除整行得分！</p>
-    <button id="overlay-btn">開始遊戲</button>
-  </div>
-</div>
 
-<div id="ui-panel">
-  <h1>3D Tetris</h1>
+<canvas id="board"></canvas>
 
-  <div class="panel-section">
+<div id="side-panel">
+  <div class="panel-box">
     <h3>分數</h3>
-    <div class="stat-value" id="score-display">0</div>
-    <div class="stat-label">SCORE</div>
+    <div class="val" id="score">0</div>
   </div>
-
-  <div class="panel-section">
+  <div class="panel-box">
     <h3>等級</h3>
-    <div class="stat-value" id="level-display">1</div>
-    <div class="stat-label">LEVEL</div>
+    <div class="val" id="level" style="color:#ffaa44">1</div>
   </div>
-
-  <div class="panel-section">
-    <h3>消除行數</h3>
-    <div class="stat-value" id="lines-display">0</div>
-    <div class="stat-label">LINES</div>
+  <div class="panel-box">
+    <h3>消行</h3>
+    <div class="val" id="lines" style="color:#44ffaa">0</div>
   </div>
-
-  <div class="panel-section">
+  <div class="panel-box">
     <h3>下一個</h3>
-    <canvas id="next-canvas" width="160" height="120"></canvas>
+    <canvas id="next-canvas" width="100" height="80"></canvas>
   </div>
-
   <button id="btn-start">重新開始</button>
-
-  <div class="panel-section">
-    <h3>操作說明</h3>
-    <ul class="controls-list">
-      <li><span>左移</span><span class="key">← A</span></li>
-      <li><span>右移</span><span class="key">→ D</span></li>
-      <li><span>前移</span><span class="key">↑ W</span></li>
-      <li><span>後移</span><span class="key">↓ S</span></li>
-      <li><span>順時鐘旋轉</span><span class="key">E</span></li>
-      <li><span>逆時鐘旋轉</span><span class="key">Q</span></li>
-      <li><span>仰俯旋轉</span><span class="key">R</span></li>
-      <li><span>側滾旋轉</span><span class="key">T</span></li>
-      <li><span>水平翻轉</span><span class="key">H</span></li>
-      <li><span>垂直翻轉</span><span class="key">V</span></li>
-      <li><span>快速落下</span><span class="key">Space</span></li>
-      <li><span>直接落底</span><span class="key">Enter</span></li>
-      <li><span>暫停</span><span class="key">P</span></li>
-      <li><span>旋轉視角</span><span>拖拽滑鼠</span></li>
-    </ul>
+  <div class="panel-box">
+    <div class="keys">
+      <b>← →</b> 左右移<br>
+      <b>↑</b> 旋轉<br>
+      <b>↓</b> 加速落下<br>
+      <b>Space</b> 直接落底<br>
+      <b>P</b> 暫停
+    </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<div id="overlay">
+  <h2>俄羅斯方塊</h2>
+  <p>清除整行得分，越高層越快！</p>
+  <button id="overlay-btn">開始遊戲</button>
+</div>
+
 <script>
-// ─── Constants ───────────────────────────────────────────────────────────────
-const BOARD_W = 6, BOARD_H = 20, BOARD_D = 6;
-const CELL = 1.0;
-const COLORS = [
-  0x00eeff, // I - cyan
-  0xffee00, // O - yellow
-  0xaa00ff, // T - purple
-  0xff6600, // L - orange
-  0x0044ff, // J - blue
-  0x00ff66, // S - green
-  0xff0044, // Z - red
-];
+const COLS = 10, ROWS = 20, CELL = 32;
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+canvas.width  = COLS * CELL;
+canvas.height = ROWS * CELL;
 
-// Tetromino shapes in 3D (x,y,z offsets from pivot)
-const PIECES = [
-  // I
-  [[0,0,0],[1,0,0],[2,0,0],[3,0,0]],
-  // O
-  [[0,0,0],[1,0,0],[0,1,0],[1,1,0]],
-  // T
-  [[0,0,0],[1,0,0],[2,0,0],[1,1,0]],
-  // L
-  [[0,0,0],[1,0,0],[2,0,0],[2,1,0]],
-  // J
-  [[0,0,0],[1,0,0],[2,0,0],[0,1,0]],
-  // S
-  [[1,0,0],[2,0,0],[0,1,0],[1,1,0]],
-  // Z
-  [[0,0,0],[1,0,0],[1,1,0],[2,1,0]],
-];
-
-// ─── State ───────────────────────────────────────────────────────────────────
-let board = [];     // 3D array [x][y][z] -> color or 0
-let current = null; // {cells:[[x,y,z],...], color}
-let nextPiece = null;
-let score = 0, level = 1, lines = 0;
-let gameOver = false, paused = false, started = false;
-let dropInterval = 800;
-let lastDrop = 0;
-
-// ─── Three.js Setup ──────────────────────────────────────────────────────────
-const canvas = document.getElementById('renderer-canvas');
-const container = document.getElementById('game-container');
-
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x080816);
-scene.fog = new THREE.FogExp2(0x080816, 0.018);
-
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
-camera.position.set(BOARD_W * 0.5, BOARD_H * 0.7, BOARD_W * 3.5);
-camera.lookAt(BOARD_W * 0.5, BOARD_H * 0.4, BOARD_D * 0.5);
-
-// Lighting
-const ambient = new THREE.AmbientLight(0x334, 0.8);
-scene.add(ambient);
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-dirLight.position.set(10, 20, 10);
-dirLight.castShadow = true;
-scene.add(dirLight);
-const pointLight = new THREE.PointLight(0x4466ff, 1.5, 40);
-pointLight.position.set(BOARD_W * 0.5, BOARD_H + 5, BOARD_D * 0.5);
-scene.add(pointLight);
-
-// Board wireframe outline
-function buildBoardOutline() {
-  const mat = new THREE.LineBasicMaterial({ color: 0x334477, transparent: true, opacity: 0.6 });
-  const group = new THREE.Group();
-  const W = BOARD_W, H = BOARD_H, D = BOARD_D;
-  const pts = [
-    [0,0,0],[W,0,0],[W,0,D],[0,0,D],[0,0,0],
-    [0,H,0],[W,H,0],[W,H,D],[0,H,D],[0,H,0],
-  ];
-  const corners = [[0,0,0],[W,0,0],[W,0,D],[0,0,D]];
-  const top    = [[0,H,0],[W,H,0],[W,H,D],[0,H,D]];
-  [pts].forEach(p => {
-    const geo = new THREE.BufferGeometry().setFromPoints(p.map(([x,y,z]) => new THREE.Vector3(x,y,z)));
-    group.add(new THREE.Line(geo, mat));
-  });
-  corners.forEach((c, i) => {
-    const geo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(...c), new THREE.Vector3(...top[i])
-    ]);
-    group.add(new THREE.Line(geo, mat));
-  });
-  scene.add(group);
-}
-buildBoardOutline();
-
-// Grid floor
-const floorGeo = new THREE.PlaneGeometry(BOARD_W, BOARD_D);
-const floorMat = new THREE.MeshLambertMaterial({ color: 0x111133, transparent: true, opacity: 0.6 });
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI / 2;
-floor.position.set(BOARD_W / 2, 0, BOARD_D / 2);
-floor.receiveShadow = true;
-scene.add(floor);
-
-// Cell mesh pool
-const boardMeshes = {}; // key "x,y,z" -> mesh
-const currentMeshes = [];
-const ghostMeshes = [];
-
-const blockGeo = new THREE.BoxGeometry(CELL * 0.92, CELL * 0.92, CELL * 0.92);
-
-function makeMat(color, ghost = false) {
-  return new THREE.MeshPhongMaterial({
-    color,
-    transparent: true,
-    opacity: ghost ? 0.12 : 0.45,
-    shininess: 160,
-    specular: 0xffffff,
-    reflectivity: 1,
-    side: THREE.DoubleSide,
-    emissive: color,
-    emissiveIntensity: ghost ? 0.08 : 0.18,
-    depthWrite: !ghost,
-  });
-}
-
-const edgeGeo = new THREE.EdgesGeometry(blockGeo);
-
-function cellMesh(x, y, z, color, ghost = false) {
-  const group = new THREE.Group();
-  group.position.set(x + 0.5, y + 0.5, z + 0.5);
-
-  const face = new THREE.Mesh(blockGeo, makeMat(color, ghost));
-  face.castShadow = !ghost;
-  group.add(face);
-
-  const edgeMat = new THREE.LineBasicMaterial({
-    color: ghost ? color : 0xffffff,
-    transparent: true,
-    opacity: ghost ? 0.2 : 0.7,
-  });
-  group.add(new THREE.LineSegments(edgeGeo, edgeMat));
-
-  scene.add(group);
-  return group;
-}
-
-// ─── Board Logic ─────────────────────────────────────────────────────────────
-function initBoard() {
-  board = [];
-  for (let x = 0; x < BOARD_W; x++) {
-    board[x] = [];
-    for (let y = 0; y < BOARD_H; y++) {
-      board[x][y] = new Array(BOARD_D).fill(0);
-    }
-  }
-}
-
-function inBounds(x, y, z) {
-  return x >= 0 && x < BOARD_W && y >= 0 && y < BOARD_H && z >= 0 && z < BOARD_D;
-}
-
-function isOccupied(x, y, z) {
-  return !inBounds(x, y, z) || board[x][y][z] !== 0;
-}
-
-function spawnPiece(typeIdx) {
-  const shape = PIECES[typeIdx];
-  const color = COLORS[typeIdx];
-  // Center piece on X and Z
-  const minX = Math.min(...shape.map(c => c[0]));
-  const maxX = Math.max(...shape.map(c => c[0]));
-  const minZ = Math.min(...shape.map(c => c[2]));
-  const maxZ = Math.max(...shape.map(c => c[2]));
-  const offX = Math.floor((BOARD_W - (maxX - minX + 1)) / 2) - minX;
-  const offZ = Math.floor((BOARD_D - (maxZ - minZ + 1)) / 2) - minZ;
-  const offY = BOARD_H - 1 - Math.max(...shape.map(c => c[1]));
-  const cells = shape.map(([x, y, z]) => [x + offX, y + offY, z + offZ]);
-  return { cells, color, typeIdx };
-}
-
-function randomPiece() {
-  return Math.floor(Math.random() * PIECES.length);
-}
-
-function validPosition(cells) {
-  return cells.every(([x, y, z]) => !isOccupied(x, y, z));
-}
-
-function lockPiece() {
-  current.cells.forEach(([x, y, z]) => {
-    if (inBounds(x, y, z)) board[x][y][z] = current.color;
-  });
-}
-
-function clearLayers() {
-  let cleared = 0;
-  for (let y = BOARD_H - 1; y >= 0; y--) {
-    let full = true;
-    outer: for (let x = 0; x < BOARD_W; x++) {
-      for (let z = 0; z < BOARD_D; z++) {
-        if (!board[x][y][z]) { full = false; break outer; }
-      }
-    }
-    if (full) {
-      cleared++;
-      for (let yy = y; yy < BOARD_H - 1; yy++) {
-        for (let x = 0; x < BOARD_W; x++) {
-          for (let z = 0; z < BOARD_D; z++) {
-            board[x][yy][z] = board[x][yy + 1][z];
-          }
-        }
-      }
-      for (let x = 0; x < BOARD_W; x++) {
-        for (let z = 0; z < BOARD_D; z++) {
-          board[x][BOARD_H - 1][z] = 0;
-        }
-      }
-      y++; // recheck same row
-    }
-  }
-  return cleared;
-}
-
-function calcScore(n) {
-  return [0, 100, 300, 600, 1000][Math.min(n, 4)] * level;
-}
-
-// ─── Rotation ────────────────────────────────────────────────────────────────
-function rotateCells(cells, axis) {
-  // Find centroid
-  const cx = cells.reduce((s, c) => s + c[0], 0) / cells.length;
-  const cy = cells.reduce((s, c) => s + c[1], 0) / cells.length;
-  const cz = cells.reduce((s, c) => s + c[2], 0) / cells.length;
-
-  return cells.map(([x, y, z]) => {
-    const dx = x - cx, dy = y - cy, dz = z - cz;
-    let nx, ny, nz;
-    if (axis === 'x') { nx = dx; ny = -dz; nz = dy; }
-    else if (axis === 'y') { nx = dz; ny = dy; nz = -dx; }
-    else { nx = -dy; ny = dx; nz = dz; }
-    return [Math.round(cx + nx), Math.round(cy + ny), Math.round(cz + nz)];
-  });
-}
-
-function tryRotate(axis, dir = 1) {
-  if (!current) return;
-  let cells = current.cells;
-  // dir=-1 means apply rotation 3 times (equivalent to reverse)
-  const times = dir === 1 ? 1 : 3;
-  for (let i = 0; i < times; i++) cells = rotateCells(cells, axis);
-  const offsets = [[0,0,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1],[0,1,0],[0,-1,0]];
-  for (const [ox, oy, oz] of offsets) {
-    const shifted = cells.map(([x, y, z]) => [x + ox, y + oy, z + oz]);
-    if (validPosition(shifted)) { current.cells = shifted; return; }
-  }
-}
-
-function flipCells(cells, axis) {
-  const cx = cells.reduce((s, c) => s + c[0], 0) / cells.length;
-  const cy = cells.reduce((s, c) => s + c[1], 0) / cells.length;
-  const cz = cells.reduce((s, c) => s + c[2], 0) / cells.length;
-  return cells.map(([x, y, z]) => {
-    if (axis === 'h') return [Math.round(2 * cx - x), y, z];   // horizontal: mirror X
-    if (axis === 'v') return [x, y, Math.round(2 * cz - z)];   // vertical: mirror Z
-    return [x, y, z];
-  });
-}
-
-function tryFlip(axis) {
-  if (!current) return;
-  const flipped = flipCells(current.cells, axis);
-  const offsets = [[0,0,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1]];
-  for (const [ox, oy, oz] of offsets) {
-    const shifted = flipped.map(([x, y, z]) => [x + ox, y + oy, z + oz]);
-    if (validPosition(shifted)) { current.cells = shifted; return; }
-  }
-}
-
-// ─── Ghost piece ─────────────────────────────────────────────────────────────
-function getGhostCells() {
-  if (!current) return [];
-  let cells = current.cells.map(c => [...c]);
-  while (true) {
-    const dropped = cells.map(([x, y, z]) => [x, y - 1, z]);
-    if (validPosition(dropped)) cells = dropped;
-    else break;
-  }
-  return cells;
-}
-
-// ─── Movement ────────────────────────────────────────────────────────────────
-function tryMove(dx, dy, dz) {
-  if (!current) return false;
-  const moved = current.cells.map(([x, y, z]) => [x + dx, y + dy, z + dz]);
-  if (validPosition(moved)) {
-    current.cells = moved;
-    return true;
-  }
-  return false;
-}
-
-function hardDrop() {
-  if (!current) return;
-  while (tryMove(0, -1, 0));
-  placePiece();
-}
-
-function softDrop() {
-  if (!current) return;
-  if (!tryMove(0, -1, 0)) placePiece();
-}
-
-function placePiece() {
-  lockPiece();
-  const cleared = clearLayers();
-  if (cleared > 0) {
-    score += calcScore(cleared);
-    lines += cleared;
-    level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 800 - (level - 1) * 70);
-  }
-  updateUI();
-  rebuildBoardMeshes();
-
-  current = nextPiece;
-  nextPiece = spawnPiece(randomPiece());
-  drawNextPiece();
-
-  if (!validPosition(current.cells)) {
-    endGame();
-    return;
-  }
-  rebuildCurrentMeshes();
-}
-
-// ─── Rendering helpers ────────────────────────────────────────────────────────
-function clearMeshList(list) {
-  list.forEach(m => scene.remove(m));
-  list.length = 0;
-}
-
-function rebuildBoardMeshes() {
-  Object.values(boardMeshes).forEach(m => scene.remove(m));
-  for (const k in boardMeshes) delete boardMeshes[k];
-
-  for (let x = 0; x < BOARD_W; x++) {
-    for (let y = 0; y < BOARD_H; y++) {
-      for (let z = 0; z < BOARD_D; z++) {
-        const c = board[x][y][z];
-        if (c) boardMeshes[`${x},${y},${z}`] = cellMesh(x, y, z, c);
-      }
-    }
-  }
-}
-
-function rebuildCurrentMeshes() {
-  clearMeshList(currentMeshes);
-  clearMeshList(ghostMeshes);
-  if (!current) return;
-
-  current.cells.forEach(([x, y, z]) => {
-    currentMeshes.push(cellMesh(x, y, z, current.color));
-  });
-
-  const ghost = getGhostCells();
-  ghost.forEach(([x, y, z]) => {
-    ghostMeshes.push(cellMesh(x, y, z, current.color, true));
-  });
-}
-
-// ─── Next piece preview ──────────────────────────────────────────────────────
 const nextCanvas = document.getElementById('next-canvas');
 const nCtx = nextCanvas.getContext('2d');
 
-function drawNextPiece() {
+// Piece definitions [shape, color]
+const PIECES = [
+  { shape: [[1,1,1,1]],                         color: '#00eeff' }, // I
+  { shape: [[1,1],[1,1]],                        color: '#ffee00' }, // O
+  { shape: [[0,1,0],[1,1,1]],                    color: '#cc44ff' }, // T
+  { shape: [[1,0],[1,0],[1,1]],                  color: '#ff8800' }, // L
+  { shape: [[0,1],[0,1],[1,1]],                  color: '#4488ff' }, // J
+  { shape: [[0,1,1],[1,1,0]],                    color: '#44ff88' }, // S
+  { shape: [[1,1,0],[0,1,1]],                    color: '#ff4466' }, // Z
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+let board, current, next, score, level, lines, gameOver, paused, started;
+let dropInterval, lastDrop;
+
+function initState() {
+  board = Array.from({ length: ROWS }, () => new Array(COLS).fill(null));
+  score = 0; level = 1; lines = 0;
+  dropInterval = 800; lastDrop = performance.now();
+  gameOver = false; paused = false; started = true;
+  next = randomPiece();
+  spawnPiece();
+  updateUI();
+}
+
+// ── Piece helpers ───────────────────────────────────────────────────────────
+function randomPiece() {
+  const p = PIECES[Math.floor(Math.random() * PIECES.length)];
+  return { shape: p.shape.map(r => [...r]), color: p.color };
+}
+
+function spawnPiece() {
+  current = next;
+  next = randomPiece();
+  current.x = Math.floor((COLS - current.shape[0].length) / 2);
+  current.y = 0;
+  if (!valid(current.shape, current.x, current.y)) endGame();
+  drawNext();
+}
+
+function rotate(shape) {
+  const rows = shape.length, cols = shape[0].length;
+  return Array.from({ length: cols }, (_, c) =>
+    Array.from({ length: rows }, (_, r) => shape[rows - 1 - r][c])
+  );
+}
+
+function valid(shape, ox, oy) {
+  for (let r = 0; r < shape.length; r++)
+    for (let c = 0; c < shape[r].length; c++)
+      if (shape[r][c]) {
+        const nx = ox + c, ny = oy + r;
+        if (nx < 0 || nx >= COLS || ny >= ROWS) return false;
+        if (ny >= 0 && board[ny][nx]) return false;
+      }
+  return true;
+}
+
+// ── Ghost ───────────────────────────────────────────────────────────────────
+function ghostY() {
+  let gy = current.y;
+  while (valid(current.shape, current.x, gy + 1)) gy++;
+  return gy;
+}
+
+// ── Lock & clear ─────────────────────────────────────────────────────────────
+function lock() {
+  const { shape, x, y, color } = current;
+  shape.forEach((row, r) =>
+    row.forEach((v, c) => { if (v && y + r >= 0) board[y + r][x + c] = color; })
+  );
+  let cleared = 0;
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (board[r].every(c => c)) {
+      board.splice(r, 1);
+      board.unshift(new Array(COLS).fill(null));
+      cleared++; r++;
+    }
+  }
+  if (cleared) {
+    const pts = [0, 100, 300, 600, 1000][Math.min(cleared, 4)] * level;
+    score += pts;
+    lines += cleared;
+    level = Math.floor(lines / 10) + 1;
+    dropInterval = Math.max(80, 800 - (level - 1) * 72);
+  }
+  updateUI();
+  spawnPiece();
+}
+
+function hardDrop() {
+  current.y = ghostY();
+  lock();
+}
+
+// ── Draw ─────────────────────────────────────────────────────────────────────
+function drawCell(ctx, x, y, color, alpha = 1, cellSize = CELL) {
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.fillRect(x * cellSize + 1, y * cellSize + 1, cellSize - 2, cellSize - 2);
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(x * cellSize + 1, y * cellSize + 1, cellSize - 2, 5);
+  ctx.fillRect(x * cellSize + 1, y * cellSize + 1, 5, cellSize - 2);
+  // Shadow edge
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  ctx.fillRect(x * cellSize + 1, y * cellSize + cellSize - 5, cellSize - 2, 4);
+  ctx.globalAlpha = 1;
+}
+
+function draw(now) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
+    }
+  }
+
+  // Board cells
+  board.forEach((row, r) =>
+    row.forEach((color, c) => { if (color) drawCell(ctx, c, r, color); })
+  );
+
+  if (current) {
+    // Ghost
+    const gy = ghostY();
+    current.shape.forEach((row, r) =>
+      row.forEach((v, c) => {
+        if (v) drawCell(ctx, current.x + c, gy + r, current.color, 0.18);
+      })
+    );
+    // Current piece
+    current.shape.forEach((row, r) =>
+      row.forEach((v, c) => {
+        if (v) drawCell(ctx, current.x + c, current.y + r, current.color);
+      })
+    );
+  }
+
+  // Paused overlay
+  if (paused) {
+    ctx.fillStyle = 'rgba(0,0,10,0.6)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#88aaff';
+    ctx.font = 'bold 28px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('暫停', canvas.width / 2, canvas.height / 2);
+  }
+}
+
+function drawNext() {
   nCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-  if (!nextPiece) return;
-  const cs = 22;
-  const shape = nextPiece.cells;
-  const minX = Math.min(...shape.map(c => c[0]));
-  const maxX = Math.max(...shape.map(c => c[0]));
-  const minY = Math.min(...shape.map(c => c[1]));
-  const maxY = Math.max(...shape.map(c => c[1]));
-  const offX = (nextCanvas.width - (maxX - minX + 1) * cs) / 2 - minX * cs;
-  const offY = (nextCanvas.height - (maxY - minY + 1) * cs) / 2 - minY * cs;
-
-  const hex = '#' + nextPiece.color.toString(16).padStart(6, '0');
-  shape.forEach(([x, y]) => {
-    nCtx.fillStyle = hex;
-    nCtx.fillRect(offX + x * cs + 1, offY + (3 - y) * cs + 1, cs - 2, cs - 2);
-    nCtx.strokeStyle = '#fff4';
-    nCtx.strokeRect(offX + x * cs + 1, offY + (3 - y) * cs + 1, cs - 2, cs - 2);
-  });
+  const cs = 20;
+  const shape = next.shape;
+  const offX = Math.floor((nextCanvas.width  - shape[0].length * cs) / 2) / cs;
+  const offY = Math.floor((nextCanvas.height - shape.length    * cs) / 2) / cs;
+  shape.forEach((row, r) =>
+    row.forEach((v, c) => { if (v) drawCell(nCtx, offX + c, offY + r, next.color, 1, cs); })
+  );
 }
 
-// ─── UI ──────────────────────────────────────────────────────────────────────
+// ── UI ────────────────────────────────────────────────────────────────────────
 function updateUI() {
-  document.getElementById('score-display').textContent = score.toLocaleString();
-  document.getElementById('level-display').textContent = level;
-  document.getElementById('lines-display').textContent = lines;
+  document.getElementById('score').textContent = score.toLocaleString();
+  document.getElementById('level').textContent = level;
+  document.getElementById('lines').textContent = lines;
 }
 
-function showOverlay(title, sub, btnText) {
+function showOverlay(title, sub, btn) {
   const ov = document.getElementById('overlay');
   ov.querySelector('h2').textContent = title;
-  ov.querySelector('p').textContent = sub;
-  ov.querySelector('button').textContent = btnText;
+  ov.querySelector('p').textContent  = sub;
+  ov.querySelector('button').textContent = btn;
   ov.style.display = 'flex';
 }
 
-function hideOverlay() {
-  document.getElementById('overlay').style.display = 'none';
-}
-
-// ─── Game lifecycle ──────────────────────────────────────────────────────────
-function startGame() {
-  gameOver = false;
-  paused = false;
-  score = 0; level = 1; lines = 0;
-  dropInterval = 800;
-  lastDrop = performance.now();
-  started = true;
-
-  initBoard();
-  rebuildBoardMeshes();
-  clearMeshList(currentMeshes);
-  clearMeshList(ghostMeshes);
-
-  nextPiece = spawnPiece(randomPiece());
-  current = spawnPiece(randomPiece());
-  nextPiece = spawnPiece(randomPiece());
-  drawNextPiece();
-  rebuildCurrentMeshes();
-  updateUI();
-  hideOverlay();
-}
+function hideOverlay() { document.getElementById('overlay').style.display = 'none'; }
 
 function endGame() {
   gameOver = true;
-  clearMeshList(currentMeshes);
-  clearMeshList(ghostMeshes);
   showOverlay('遊戲結束', `最終分數：${score.toLocaleString()}`, '再玩一次');
 }
 
-// ─── Camera orbit ────────────────────────────────────────────────────────────
-let isDragging = false, lastMX = 0, lastMY = 0;
-let camAngleH = 0, camAngleV = 0.35;
-const CAM_RADIUS = BOARD_W * 2.8;
-const CAM_CENTER = new THREE.Vector3(BOARD_W / 2, BOARD_H * 0.4, BOARD_D / 2);
-
-function updateCamera() {
-  const x = CAM_CENTER.x + CAM_RADIUS * Math.sin(camAngleH) * Math.cos(camAngleV);
-  const y = CAM_CENTER.y + CAM_RADIUS * Math.sin(camAngleV) + 2;
-  const z = CAM_CENTER.z + CAM_RADIUS * Math.cos(camAngleH) * Math.cos(camAngleV);
-  camera.position.set(x, y, z);
-  camera.lookAt(CAM_CENTER);
-}
-updateCamera();
-
-canvas.addEventListener('mousedown', e => { isDragging = true; lastMX = e.clientX; lastMY = e.clientY; });
-window.addEventListener('mouseup', () => isDragging = false);
-window.addEventListener('mousemove', e => {
-  if (!isDragging) return;
-  camAngleH += (e.clientX - lastMX) * 0.01;
-  camAngleV = Math.max(-0.1, Math.min(1.2, camAngleV - (e.clientY - lastMY) * 0.01));
-  lastMX = e.clientX; lastMY = e.clientY;
-  updateCamera();
-});
-
-// Touch support for camera
-canvas.addEventListener('touchstart', e => {
-  if (e.touches.length === 1) { isDragging = true; lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY; }
-});
-canvas.addEventListener('touchend', () => isDragging = false);
-canvas.addEventListener('touchmove', e => {
-  if (!isDragging || e.touches.length !== 1) return;
-  camAngleH += (e.touches[0].clientX - lastMX) * 0.01;
-  camAngleV = Math.max(-0.1, Math.min(1.2, camAngleV - (e.touches[0].clientY - lastMY) * 0.01));
-  lastMX = e.touches[0].clientX; lastMY = e.touches[0].clientY;
-  updateCamera();
-  e.preventDefault();
-}, { passive: false });
-
-// ─── Input ───────────────────────────────────────────────────────────────────
+// ── Input ─────────────────────────────────────────────────────────────────────
 const keyRepeat = {};
-const KEY_DELAY = 160, KEY_REPEAT = 80;
+const KEY_DELAY = 150, KEY_RPT = 70;
 
 window.addEventListener('keydown', e => {
-  if (!started || gameOver) return;
-  if (e.code === 'KeyP') { paused = !paused; return; }
-  if (paused) return;
+  if (!started) return;
+  if (e.code === 'KeyP') { if (!gameOver) paused = !paused; return; }
+  if (paused || gameOver) return;
 
   switch (e.code) {
-    case 'ArrowLeft':  case 'KeyA': handleMove(() => tryMove(-1, 0, 0)); break;
-    case 'ArrowRight': case 'KeyD': handleMove(() => tryMove(1, 0, 0)); break;
-    case 'ArrowUp':    case 'KeyW': handleMove(() => tryMove(0, 0, -1)); break;
-    case 'ArrowDown':  case 'KeyS': handleMove(() => tryMove(0, 0, 1)); break;
-    case 'Space': softDrop(); rebuildCurrentMeshes(); e.preventDefault(); break;
-    case 'Enter': hardDrop(); e.preventDefault(); break;
-    case 'KeyQ': tryRotate('y', -1); rebuildCurrentMeshes(); break; // 逆時鐘
-    case 'KeyE': tryRotate('y',  1); rebuildCurrentMeshes(); break; // 順時鐘
-    case 'KeyR': tryRotate('x',  1); rebuildCurrentMeshes(); break; // 仰俯
-    case 'KeyT': tryRotate('z',  1); rebuildCurrentMeshes(); break; // 側滾
-    case 'KeyH': tryFlip('h'); rebuildCurrentMeshes(); break;        // 水平翻轉
-    case 'KeyV': tryFlip('v'); rebuildCurrentMeshes(); break;        // 垂直翻轉
+    case 'ArrowLeft':
+      doMove(() => { if (valid(current.shape, current.x - 1, current.y)) { current.x--; return true; } });
+      break;
+    case 'ArrowRight':
+      doMove(() => { if (valid(current.shape, current.x + 1, current.y)) { current.x++; return true; } });
+      break;
+    case 'ArrowUp': {
+      const rot = rotate(current.shape);
+      const kicks = [0, -1, 1, -2, 2];
+      for (const k of kicks) {
+        if (valid(rot, current.x + k, current.y)) { current.shape = rot; current.x += k; break; }
+      }
+      break;
+    }
+    case 'ArrowDown':
+      doMove(() => { if (valid(current.shape, current.x, current.y + 1)) { current.y++; return true; } });
+      e.preventDefault();
+      break;
+    case 'Space': hardDrop(); e.preventDefault(); break;
   }
 
-  function handleMove(fn) {
-    if (fn()) rebuildCurrentMeshes();
+  function doMove(fn) {
+    fn();
     if (!keyRepeat[e.code]) {
-      keyRepeat[e.code] = { timer: setTimeout(function repeat() {
-        if (fn()) rebuildCurrentMeshes();
-        keyRepeat[e.code].timer = setTimeout(repeat, KEY_REPEAT);
-      }, KEY_DELAY) };
+      keyRepeat[e.code] = setTimeout(function repeat() {
+        if (!paused && !gameOver) fn();
+        keyRepeat[e.code] = setTimeout(repeat, KEY_RPT);
+      }, KEY_DELAY);
     }
   }
 });
 
 window.addEventListener('keyup', e => {
-  if (keyRepeat[e.code]) { clearTimeout(keyRepeat[e.code].timer); delete keyRepeat[e.code]; }
+  if (keyRepeat[e.code]) { clearTimeout(keyRepeat[e.code]); delete keyRepeat[e.code]; }
 });
 
-// ─── Resize ──────────────────────────────────────────────────────────────────
-function resize() {
-  const w = container.clientWidth, h = container.clientHeight;
-  renderer.setSize(w, h);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', resize);
-resize();
-
-// ─── Game loop ───────────────────────────────────────────────────────────────
-let frameId;
-function gameLoop(now) {
-  frameId = requestAnimationFrame(gameLoop);
-
+// ── Game loop ─────────────────────────────────────────────────────────────────
+function loop(now) {
+  requestAnimationFrame(loop);
   if (started && !gameOver && !paused) {
-    if (now - lastDrop > dropInterval) {
+    if (now - lastDrop >= dropInterval) {
       lastDrop = now;
-      if (!tryMove(0, -1, 0)) {
-        placePiece();
-      } else {
-        rebuildCurrentMeshes();
-      }
+      if (valid(current.shape, current.x, current.y + 1)) current.y++;
+      else lock();
     }
   }
-
-  // Subtle pulse on current piece
-  if (currentMeshes.length && !gameOver) {
-    const pulse = 0.92 + 0.08 * Math.sin(now * 0.004);
-    currentMeshes.forEach(m => m.scale.setScalar(pulse));
-  }
-
-  renderer.render(scene, camera);
+  if (started) draw(now);
 }
-requestAnimationFrame(gameLoop);
+requestAnimationFrame(loop);
 
-// ─── Button handlers ─────────────────────────────────────────────────────────
+// ── Buttons ───────────────────────────────────────────────────────────────────
+function startGame() { hideOverlay(); initState(); }
 document.getElementById('overlay-btn').addEventListener('click', startGame);
 document.getElementById('btn-start').addEventListener('click', startGame);
 </script>
